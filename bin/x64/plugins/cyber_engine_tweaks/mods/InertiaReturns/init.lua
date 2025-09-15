@@ -17,7 +17,10 @@ AIR = {
     was_on_ground = true,
     -- Inertia strength factor (0.0 = no inertia)
     default_inertia_factor = 0.45,
-    inertia_factor = 0
+    inertia_factor = 0,
+    -- Vehicle landing settings
+    down_force = -30.0,
+    raycast_distance = 4.0
 }
 
 registerForEvent('onInit', function()
@@ -44,6 +47,17 @@ registerForEvent('onInit', function()
         local locomotion_velocity = this.GetLinearVelocity(scriptInterface)
 
         if is_on_ground then
+            -- Apply velocity correction if enabled and on vehicle
+            if not AIR.was_on_ground then
+                this:AddImpulse(stateContext, Vector4.new(
+                    0.0,
+                    0.0,
+                    AIR.down_force,
+                    1.0
+                ))
+                print('[AIR][Info] Vehicle landing correction applied.')
+            end
+
             -- Record current velocity when on the ground
             AIR.last_ground_velocity = player:GetVelocity()
             AIR.was_on_ground = true
