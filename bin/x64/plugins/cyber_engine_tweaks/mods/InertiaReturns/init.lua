@@ -55,7 +55,6 @@ registerForEvent('onInit', function()
                     AIR.down_force,
                     1.0
                 ))
-                print('[AIR][Info] Vehicle landing correction applied.')
             end
 
             -- Record current velocity when on the ground
