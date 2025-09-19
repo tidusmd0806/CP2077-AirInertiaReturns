@@ -19,7 +19,8 @@ AIR = {
     default_inertia_factor = 0.45,
     inertia_factor = 0,
     -- Vehicle landing settings
-    down_force = -30.0,
+    default_down_force = -30.0,
+    down_force = 0,
     raycast_distance = 4.0
 }
 
@@ -31,6 +32,7 @@ registerForEvent('onInit', function()
     end
 
     AIR:ResetInertiaFactor()
+    AIR:ResetDownForce()
     AIR.last_ground_velocity = Vector4.new(0.0, 0.0, 0.0, 0.0)
     local AIR = AIR -- Save self for closure
     ObserveAfter("LocomotionTransition", "IsCurrentFallSpeedTooFastToEnter",
@@ -102,6 +104,14 @@ end
 
 function AIR:ResetInertiaFactor()
     AIR.inertia_factor = AIR.default_inertia_factor
+end
+
+function AIR:SetDownForce(force)
+    AIR.down_force = force
+end
+
+function AIR:ResetDownForce()
+    AIR.down_force = AIR.default_down_force
 end
 
 return AIR
