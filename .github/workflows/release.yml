@@ -18,9 +18,7 @@ jobs:
       
     - name: Create zip archive
       run: |
-        cd bin
-        zip -r ../AirInertiaReturns.zip .
-        cd ..
+        zip -r AirInertiaReturns.zip bin/
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
