@@ -6,7 +6,7 @@
 
 AIR = {
 	description = "The Air's Inertia Returns",
-	version = "1.0.0",
+	version = "1.1.0",
     -- version check
     cet_required_version = 36.0, -- 1.36.0
     cet_version_num = 0,
@@ -21,7 +21,7 @@ AIR = {
     -- Vehicle landing settings
     default_down_force = -30.0,
     down_force = 0,
-    raycast_distance = 4.0
+    raycast_distance = 3.0,
 }
 
 registerForEvent('onInit', function()
@@ -35,11 +35,12 @@ registerForEvent('onInit', function()
     AIR:ResetDownForce()
     AIR.last_ground_velocity = Vector4.new(0.0, 0.0, 0.0, 0.0)
     local AIR = AIR -- Save self for closure
-    ObserveAfter("LocomotionTransition", "IsCurrentFallSpeedTooFastToEnter",
-    ---@param this LocomotionTransition
+    ObserveAfter("LocomotionEventsTransition", "OnUpdate",
+    ---@param this LocomotionEventsTransition
+    ---@param timeDelta Float
     ---@param stateContext StateContext
     ---@param scriptInterface StateGameScriptInterface
-    function(this, stateContext, scriptInterface)
+    function(this, timeDelta, stateContext, scriptInterface)
         -- Get player object
         local player = Game.GetPlayer()
 
@@ -51,12 +52,15 @@ registerForEvent('onInit', function()
         if is_on_ground then
             -- Apply velocity correction if enabled and on vehicle
             if not AIR.was_on_ground then
-                this:AddImpulse(stateContext, Vector4.new(
-                    0.0,
-                    0.0,
-                    AIR.down_force,
-                    1.0
-                ))
+                -- Update down force based on ground material before applying
+                if AIR:IsSlidingGround(player) then
+                    this:AddImpulse(stateContext, Vector4.new(
+                        0.0,
+                        0.0,
+                        AIR.down_force,
+                        1.0
+                    ))
+                end
             end
 
             -- Record current velocity when on the ground
@@ -112,6 +116,35 @@ end
 
 function AIR:ResetDownForce()
     AIR.down_force = AIR.default_down_force
+end
+
+function AIR:IsSlidingGround(player)
+    local player_position = player:GetWorldPosition()
+    local start_position = Vector4.new(
+        player_position.x,
+        player_position.y,
+        player_position.z + 0.5,
+        1.0
+    )
+    local end_position = Vector4.new(
+        player_position.x,
+        player_position.y,
+        player_position.z - AIR.raycast_distance,
+        1.0
+    )
+    local is_static_colliding, _ = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(start_position,end_position,"Static",false,true)
+    if is_static_colliding then
+        return true
+    end
+    local is_dynamic_colliding, _ = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(start_position,end_position,"Dynamic",false,true)
+    if is_dynamic_colliding then
+        return true
+    end
+    local is_vehicle_colliding, _ = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(start_position,end_position,"Vehicle",false,false)
+    if is_vehicle_colliding then
+        return true
+    end
+    return false
 end
 
 return AIR
