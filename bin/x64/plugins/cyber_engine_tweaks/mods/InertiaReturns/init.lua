@@ -6,7 +6,7 @@
 
 AIR = {
 	description = "The Air's Inertia Returns",
-	version = "1.1.0",
+	version = "1.2.0",
     -- version check
     cet_required_version = 36.0, -- 1.36.0
     cet_version_num = 0,
@@ -22,6 +22,9 @@ AIR = {
     default_down_force = -30.0,
     down_force = 0,
     raycast_distance = 3.0,
+    -- dodge
+    is_dodge = false,
+    is_air_dodge = false,
 }
 
 registerForEvent('onInit', function()
@@ -41,6 +44,7 @@ registerForEvent('onInit', function()
     ---@param stateContext StateContext
     ---@param scriptInterface StateGameScriptInterface
     function(this, timeDelta, stateContext, scriptInterface)
+
         -- Get player object
         local player = Game.GetPlayer()
 
@@ -67,6 +71,10 @@ registerForEvent('onInit', function()
             AIR.last_ground_velocity = player:GetVelocity()
             AIR.was_on_ground = true
         else
+            if AIR.is_dodge or AIR.is_air_dodge then
+                -- Do not apply inertia during dodge
+                return
+            end
             -- Apply inertia only at the moment of leaving the ground
             if AIR.was_on_ground then
                 -- Apply inertia once when leaving the ground
@@ -80,6 +88,39 @@ registerForEvent('onInit', function()
             end
             -- After that, leave it to the game's physics engine (do nothing)
         end
+    end)
+
+    Observe("DodgeEvents", "OnEnter",
+    ---@param this DodgeEvents
+    ---@param stateContext StateContext
+    ---@param scriptInterface StateGameScriptInterface
+    function(this, stateContext, scriptInterface)   
+        AIR.is_dodge = true
+    end)
+
+    ObserveAfter("DodgeEvents", "OnExit",
+    ---@param this DodgeEvents
+    ---@param stateContext StateContext
+    ---@param scriptInterface StateGameScriptInterface
+    function(this, stateContext, scriptInterface)
+        AIR.is_dodge = false
+    end)
+
+
+    Observe("DodgeAirEvents", "OnEnter",
+    ---@param this DodgeAirEvents
+    ---@param stateContext StateContext
+    ---@param scriptInterface StateGameScriptInterface
+    function(this, stateContext, scriptInterface)   
+        AIR.is_air_dodge = true
+    end)
+
+    ObserveAfter("DodgeAirEvents", "OnExit",
+    ---@param this DodgeAirEvents
+    ---@param stateContext StateContext
+    ---@param scriptInterface StateGameScriptInterface
+    function(this, stateContext, scriptInterface)
+        AIR.is_air_dodge = false
     end)
 
     print('[AIR][Info] Air\'s Inertia Returns Mod loaded successfully.')
